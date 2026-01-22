@@ -4,73 +4,37 @@ import google.generativeai as genai
 import time
 import requests
 
-# --- 1. CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(
-    page_title="Mapeamento Ultra",
-    page_icon="💎",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+# --- 1. CONFIGURAÇÃO INICIAL ---
+st.set_page_config(page_title="Mapeamento Ultra", page_icon="💎", layout="centered", initial_sidebar_state="collapsed")
 
-# --- 2. CONTROLE DE NAVEGAÇÃO (MÁGICA DO PASSO A PASSO) ---
-if 'step' not in st.session_state:
-    st.session_state.step = 1
-if 'dados' not in st.session_state:
-    st.session_state.dados = {}
-
-def next_step():
-    st.session_state.step += 1
-
-# --- 3. ESTILO VISUAL PREMIUM ---
+# --- 2. ESTILO VISUAL (CSS DARK & GOLD) ---
 st.markdown("""
     <style>
-    /* Fundo Escuro Absoluto */
-    .stApp {
-        background-color: #0E1117;
-        color: #FAFAFA;
-    }
+    .stApp {background-color: #0E1117; color: #FAFAFA;}
+    #MainMenu, footer, header {visibility: hidden;}
     
-    /* Esconder Elementos Padrão do Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Botões Dourados */
+    /* Botões */
     .stButton > button {
-        background-color: #FFC107 !important;
-        color: #000000 !important;
-        font-weight: 800 !important;
-        border: none !important;
-        padding: 20px !important;
-        font-size: 20px !important;
-        text-transform: uppercase;
-        width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        background-color: #FFC107 !important; color: black !important;
+        font-weight: 800 !important; text-transform: uppercase;
+        width: 100%; padding: 18px !important; border-radius: 8px; border: none;
     }
-    .stButton > button:hover {
-        background-color: #FFD54F !important;
-        transform: scale(1.02);
-    }
-
+    
     /* Sliders */
-    div.stSlider > div[data-baseweb="slider"] > div > div > div[role="slider"]{
-        background-color: #FFC107 !important;
+    div.stSlider > div[data-baseweb="slider"] > div > div > div[role="slider"] {
+        background-color: #FFC107 !important; box-shadow: 0 0 10px #FFC107;
     }
     div.stSlider > div[data-baseweb="slider"] > div > div > div > div {
         background-color: #FFC107 !important;
     }
     
-    /* Caixas de Texto (Inputs) */
-    .stTextInput > div > div > input {
-        background-color: #1E1E1E !important;
-        color: white !important;
-        border: 1px solid #333 !important;
-    }
+    /* Textos das Perguntas */
+    .pergunta-titulo {font-size: 18px; font-weight: bold; color: #FFC107; margin-bottom: 5px;}
+    .pergunta-desc {font-size: 14px; color: #CCC; margin-bottom: 15px;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. CONFIGURAÇÃO API ---
+# --- 3. CONFIGURAÇÃO API ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     SHEET_URL = st.secrets["SHEET_URL"]
@@ -79,209 +43,192 @@ except:
     GOOGLE_API_KEY = ""
     SHEET_URL = ""
 
-# --- 5. FUNÇÕES LÓGICAS ---
-def get_ai_diagnosis(palco, bastidor, quadrante, pior_nota_nome):
-    if not GOOGLE_API_KEY:
-        return "⚠️ IA Desconectada. Configure a Chave de API no Streamlit."
-    
-    tom = "Cirúrgico, direto e impactante."
-    if quadrante == "LÍDER ANTIFRÁGIL": tom = "Validar a força, mas alertar sobre a arrogância."
-    if quadrante == "GIGANTE DE CRISTAL": tom = "Alerta vermelho. Sucesso externo vs Vazio interno."
-
-    prompt = f"""
-    Atue como Mentor do Método Ultra.
-    Analise este perfil:
-    - Arquétipo: {quadrante}
-    - Palco (Externo): {palco:.1f}
-    - Bastidor (Interno): {bastidor:.1f}
-    - Ponto Fraco: {pior_nota_nome}
-    
-    Diretrizes: {tom}
-    Escreva um veredito curto (max 60 palavras) usando Markdown e Negrito.
-    """
-    try:
-        # VOLTAMOS PARA O GEMINI-PRO (MAIS ESTÁVEL)
-        model = genai.GenerativeModel('gemini-pro')
-        response = model.generate_content(prompt)
-        return response.text
-    except:
-        return "O Mentor está em silêncio. (Erro de Conexão IA)"
-
-def save_lead(dados):
-    if not SHEET_URL: return
-    try:
-        payload = {
-            "Data": time.strftime("%d/%m/%Y %H:%M:%S"),
-            "Nome": dados['nome'],
-            "Email": dados['email'],
-            "WhatsApp": dados['whatsapp'],
-            "Resultado": dados['quadrante'],
-            "Palco": f"{dados['palco']:.1f}",
-            "Bastidor": f"{dados['bastidor']:.1f}"
-        }
-        requests.post(SHEET_URL, json=payload)
-    except: pass
-
+# --- 4. FUNÇÕES DE SUPORTE ---
 def feedback_visual(nota):
     if nota <= 4: return "🔴 Crítico"
     elif nota <= 7: return "🟡 Atenção"
     else: return "🟢 Ultra"
 
-# ==========================================
-# --- FLUXO DO APLICATIVO (WIZARD) ---
-# ==========================================
-
-# --- PASSO 1: INTRODUÇÃO ---
-if st.session_state.step == 1:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; color: #FFC107; font-size: 50px;'>MÉTODO ULTRA</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: white;'>MAPEAMENTO DE COERÊNCIA</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #ccc; margin-top: 20px;'>Descubra se o seu sucesso é sólido ou se você é um Gigante de Cristal.</p>", unsafe_allow_html=True)
+def get_mentor_voice(palco, bastidor, quadrante, pior_area):
+    if not GOOGLE_API_KEY:
+        return "⚠️ O Mentor IA precisa da Chave de API configurada no 'Secrets' do Streamlit para falar."
     
-    st.markdown("<br>", unsafe_allow_html=True)
+    prompt = f"""
+    Aja como um Mentor de Elite (Método Ultra). Seja curto, visceral e direto.
+    Analise: Líder perfil '{quadrante}'.
+    Palco (Sucesso Externo): {palco:.1f}/10. Bastidor (Paz Interna): {bastidor:.1f}/10.
+    Ponto mais fraco: {pior_area}.
+    
+    Dê um veredito de 2 frases impactantes. Sem saudações.
+    """
+    try:
+        # VOLTAMOS PARA O GEMINI-PRO (COMPATIBILIDADE TOTAL)
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Erro de conexão IA: {e}"
+
+def save_lead(dados):
+    if not SHEET_URL: return
+    try:
+        requests.post(SHEET_URL, json={
+            "Data": time.strftime("%d/%m/%Y"), "Nome": dados['nome'],
+            "Email": dados['email'], "Whatsapp": dados['whatsapp'],
+            "Resultado": dados['quadrante']
+        })
+    except: pass
+
+# --- 5. CONTROLE DE ESTADO (WIZARD) ---
+if 'step' not in st.session_state: st.session_state.step = 1
+if 'd' not in st.session_state: st.session_state.d = {}
+
+# ================= TELA 1: CAPA =================
+if st.session_state.step == 1:
+    st.markdown("<br><h1 style='text-align:center; color:#FFC107'>MÉTODO ULTRA</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center'>Você venceu o jogo de fora.<br>Mas e o jogo de dentro?</p>", unsafe_allow_html=True)
+    st.markdown("---")
     if st.button("INICIAR MAPEAMENTO 🚀"):
-        next_step()
+        st.session_state.step = 2
         st.rerun()
 
-# --- PASSO 2: AS PERGUNTAS ---
+# ================= TELA 2: PERGUNTAS (TEXTOS COMPLETOS) =================
 elif st.session_state.step == 2:
-    st.markdown("### 🏛️ O PALCO (O que o mundo vê)")
-    q1 = st.slider("1. Resultados e Entrega", 0, 10, 5)
+    st.markdown("### 🏛️ O PALCO (Externo)")
+    
+    st.markdown("<div class='pergunta-titulo'>1. Resultados e Entrega</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Sendo brutalmente honesto: comparado à média do mercado, o quanto você realmente entrega de resultado?</div>", unsafe_allow_html=True)
+    q1 = st.slider("", 0, 10, 5, key="q1")
     st.caption(feedback_visual(q1))
-    q2 = st.slider("2. Pressão e Responsabilidade", 0, 10, 5)
+    
+    st.markdown("<div class='pergunta-titulo'>2. O Peso da Coroa</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Qual o tamanho da pressão e responsabilidade que está sobre os seus ombros hoje?</div>", unsafe_allow_html=True)
+    q2 = st.slider("", 0, 10, 5, key="q2")
     st.caption(feedback_visual(q2))
-    q3 = st.slider("3. Reconhecimento e Respeito", 0, 10, 5)
-    st.caption(feedback_visual(q3))
-    q4 = st.slider("4. Ambição e Fome", 0, 10, 5)
-    st.caption(feedback_visual(q4))
+
+    st.markdown("<div class='pergunta-titulo'>3. Reconhecimento</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Quando citam o seu nome na sua área, qual o nível de respeito e autoridade que você tem?</div>", unsafe_allow_html=True)
+    q3 = st.slider("", 0, 10, 5, key="q3")
+    
+    st.markdown("<div class='pergunta-titulo'>4. Fome de Conquista</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>O quanto você ainda quer crescer? Sua ambição está viva ou você se acomodou?</div>", unsafe_allow_html=True)
+    q4 = st.slider("", 0, 10, 5, key="q4")
 
     st.markdown("---")
-    st.markdown("### 🧱 O BASTIDOR (O que só você sente)")
-    q5 = st.slider("5. Nível de Energia Real", 0, 10, 5)
-    st.caption(feedback_visual(q5))
-    q6 = st.slider("6. Controle da Ansiedade", 0, 10, 5)
-    st.caption(feedback_visual(q6))
-    q7 = st.slider("7. Presença com a Família", 0, 10, 5)
-    st.caption(feedback_visual(q7))
-    q8 = st.slider("8. Sentido e Propósito", 0, 10, 5)
-    st.caption(feedback_visual(q8))
-    q9 = st.slider("9. Paz no Silêncio", 0, 10, 5)
-    st.caption(feedback_visual(q9))
+    st.markdown("### 🧱 O BASTIDOR (Interno)")
 
-    if st.button("CONTINUAR PARA ANÁLISE ➡️"):
-        # Salvar notas na sessão
-        st.session_state.dados.update({
-            'q1':q1, 'q2':q2, 'q3':q3, 'q4':q4,
-            'q5':q5, 'q6':q6, 'q7':q7, 'q8':q8, 'q9':q9
-        })
-        next_step()
+    st.markdown("<div class='pergunta-titulo'>5. Bateria Real</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Ao acordar na segunda-feira, qual seu nível real de energia vital?</div>", unsafe_allow_html=True)
+    q5 = st.slider("", 0, 10, 5, key="q5")
+    st.caption(feedback_visual(q5))
+
+    st.markdown("<div class='pergunta-titulo'>6. Controle da Mente</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Quem está no comando: você ou sua ansiedade/pensamentos acelerados?</div>", unsafe_allow_html=True)
+    q6 = st.slider("", 0, 10, 5, key="q6")
+
+    st.markdown("<div class='pergunta-titulo'>7. Presença Real</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Quando você está com quem ama, você está lá de corpo e alma ou está no celular/trabalho?</div>", unsafe_allow_html=True)
+    q7 = st.slider("", 0, 10, 5, key="q7")
+
+    st.markdown("<div class='pergunta-titulo'>8. Sentido</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>No fundo, você sente que o que faz tem um propósito maior ou é apenas pelo dinheiro?</div>", unsafe_allow_html=True)
+    q8 = st.slider("", 0, 10, 5, key="q8")
+
+    st.markdown("<div class='pergunta-titulo'>9. O Silêncio</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pergunta-desc'>Se você ficar 1 hora sozinho, em silêncio absoluto. Você sente Paz ou Angústia?</div>", unsafe_allow_html=True)
+    q9 = st.slider("", 0, 10, 5, key="q9")
+
+    if st.button("ANALISAR PERFIL ➡️"):
+        st.session_state.d = {'q1':q1, 'q2':q2, 'q3':q3, 'q4':q4, 'q5':q5, 'q6':q6, 'q7':q7, 'q8':q8, 'q9':q9}
+        st.session_state.step = 3
         st.rerun()
 
-# --- PASSO 3: CADASTRO ---
+# ================= TELA 3: CADASTRO =================
 elif st.session_state.step == 3:
-    st.markdown("<h2 style='text-align: center;'>🔒 RELATÓRIO CONFIDENCIAL</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Seus dados estão seguros. Preencha para liberar o acesso.</p>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center'>🔒 DADOS PARA ANÁLISE</h3>", unsafe_allow_html=True)
+    nome = st.text_input("Nome")
+    email = st.text_input("Email Corporativo")
+    zap = st.text_input("WhatsApp")
     
-    nome = st.text_input("Nome Completo")
-    email = st.text_input("E-mail Corporativo")
-    whatsapp = st.text_input("WhatsApp (com DDD)")
-
-    if st.button("REVELAR A VERDADE 🔓"):
-        if not nome or not email or not whatsapp:
-            st.error("Preencha todos os campos.")
-        else:
+    if st.button("REVELAR DIAGNÓSTICO"):
+        if nome and email and zap:
             # Cálculos
-            d = st.session_state.dados
-            media_palco = (d['q1'] + d['q2'] + d['q3'] + d['q4']) / 4
-            media_bastidor = (d['q5'] + d['q6'] + d['q7'] + d['q8'] + d['q9']) / 5
+            d = st.session_state.d
+            palco = (d['q1']+d['q2']+d['q3']+d['q4'])/4
+            bastidor = (d['q5']+d['q6']+d['q7']+d['q8']+d['q9'])/5
             
-            if media_palco >= 5 and media_bastidor >= 5: quadrante = "LÍDER ANTIFRÁGIL"
-            elif media_palco >= 5 and media_bastidor < 5: quadrante = "GIGANTE DE CRISTAL"
-            elif media_palco < 5 and media_bastidor >= 5: quadrante = "TEÓRICO"
-            else: quadrante = "SONÂMBULO"
-
-            # Encontrar pior nota
+            if palco >= 5 and bastidor >= 5: quad = "LÍDER ANTIFRÁGIL"
+            elif palco >= 5 and bastidor < 5: quad = "GIGANTE DE CRISTAL"
+            elif palco < 5 and bastidor >= 5: quad = "TEÓRICO"
+            else: quad = "SONÂMBULO"
+            
+            # Pior nota
             notas = [d['q5'], d['q6'], d['q7'], d['q8'], d['q9']]
-            nomes = ["Energia", "Mente", "Presença", "Propósito", "Silêncio"]
-            pior_val = min(notas)
-            pior_nome = nomes[notas.index(pior_val)]
+            labels = ["Energia", "Mente", "Presença", "Sentido", "Silêncio"]
+            pior_area = labels[notas.index(min(notas))]
 
-            # Salvar tudo na sessão
-            st.session_state.dados.update({
-                'nome': nome, 'email': email, 'whatsapp': whatsapp,
-                'palco': media_palco, 'bastidor': media_bastidor,
-                'quadrante': quadrante, 'pior_nome': pior_nome
-            })
-            
-            next_step()
+            # Salvar sessão
+            st.session_state.d.update({'nome':nome, 'email':email, 'whatsapp':zap, 'quadrante':quad, 'palco':palco, 'bastidor':bastidor, 'pior_area':pior_area})
+            st.session_state.step = 4
             st.rerun()
+        else:
+            st.error("Preencha todos os campos.")
 
-# --- PASSO 4: PROCESSAMENTO (ANIMAÇÃO) ---
+# ================= TELA 4: PROCESSAMENTO =================
 elif st.session_state.step == 4:
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
-    with st.spinner("🔄 Conectando ao Banco de Dados Ultra..."):
-        save_lead(st.session_state.dados) # Salva na planilha
-        time.sleep(1.5)
-    
-    with st.spinner("🧠 O Mentor está analisando seus padrões..."):
-        # Gera texto IA
-        dados = st.session_state.dados
-        texto = get_ai_diagnosis(dados['palco'], dados['bastidor'], dados['quadrante'], dados['pior_nome'])
-        st.session_state.dados['texto_ia'] = texto
-        time.sleep(1.5)
-    
-    next_step()
-    st.rerun()
+    with st.spinner("🤖 O Mentor está analisando seus padrões..."):
+        save_lead(st.session_state.d) # Planilha
+        st.session_state.d['texto_ia'] = get_mentor_voice(st.session_state.d['palco'], st.session_state.d['bastidor'], st.session_state.d['quadrante'], st.session_state.d['pior_area'])
+        time.sleep(2)
+        st.session_state.step = 5
+        st.rerun()
 
-# --- PASSO 5: RESULTADO FINAL ---
+# ================= TELA 5: RESULTADO (GRÁFICO TRAVADO) =================
 elif st.session_state.step == 5:
-    dados = st.session_state.dados
-    
-    # Título do Resultado
-    cor = "#FFC107"
-    if dados['quadrante'] == "GIGANTE DE CRISTAL": cor = "#FF4B4B" # Vermelho
-    if dados['quadrante'] == "LÍDER ANTIFRÁGIL": cor = "#00FF00" # Verde
+    d = st.session_state.d
+    cor = "#FF0000" if d['quadrante'] == "GIGANTE DE CRISTAL" else "#00FF00"
+    if d['quadrante'] == "SONÂMBULO": cor = "#888"
+    if d['quadrante'] == "TEÓRICO": cor = "#00F"
 
-    st.markdown(f"<h1 style='text-align: center; color: {cor};'>{dados['quadrante']}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='text-align:center; color:{cor}'>{d['quadrante']}</h1>", unsafe_allow_html=True)
     
-    # Gráfico
+    # GRÁFICO TRAVADO (STATIC PLOT)
     fig = go.Figure()
-    fig.add_shape(type="rect", x0=0, y0=5, x1=5, y1=10, fillcolor="#FF4B4B", opacity=0.2, line_width=0)
-    fig.add_shape(type="rect", x0=5, y0=5, x1=10, y1=10, fillcolor="#00FF00", opacity=0.2, line_width=0)
-    fig.add_shape(type="rect", x0=0, y0=0, x1=5, y1=5, fillcolor="#808080", opacity=0.2, line_width=0)
-    fig.add_shape(type="rect", x0=5, y0=0, x1=10, y1=5, fillcolor="#0000FF", opacity=0.2, line_width=0)
+    # Quadrantes
+    fig.add_shape(type="rect", x0=0, y0=5, x1=5, y1=10, fillcolor="red", opacity=0.2, line_width=0)
+    fig.add_shape(type="rect", x0=5, y0=5, x1=10, y1=10, fillcolor="green", opacity=0.2, line_width=0)
+    fig.add_shape(type="rect", x0=0, y0=0, x1=5, y1=5, fillcolor="gray", opacity=0.2, line_width=0)
+    fig.add_shape(type="rect", x0=5, y0=0, x1=10, y1=5, fillcolor="blue", opacity=0.2, line_width=0)
     
+    # Ponto do Usuário
     fig.add_trace(go.Scatter(
-        x=[dados['bastidor']], y=[dados['palco']],
-        mode='markers',
-        marker=dict(size=35, color=cor, line=dict(width=3, color='white'))
+        x=[d['bastidor']], y=[d['palco']],
+        mode='markers', marker=dict(size=30, color=cor, line=dict(width=4, color='white'))
     ))
+    
+    # Configuração para TRAVAR O ZOOM (Mobile Friendly)
     fig.update_layout(
-        xaxis=dict(range=[0, 10], title="BASTIDOR", showgrid=False, zeroline=False),
-        yaxis=dict(range=[0, 10], title="PALCO", showgrid=False, zeroline=False),
+        xaxis=dict(range=[0, 10], title="BASTIDOR", showgrid=False, fixedrange=True), # fixedrange trava o eixo
+        yaxis=dict(range=[0, 10], title="PALCO", showgrid=False, fixedrange=True),
         width=400, height=400,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        showlegend=False,
-        margin=dict(l=20, r=20, t=20, b=20)
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        showlegend=False, margin=dict(l=20, r=20, t=20, b=20),
+        dragmode=False # Desativa arrastar
     )
-    st.plotly_chart(fig, use_container_width=True)
+    
+    # Exibe o gráfico travado
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'staticPlot': True})
 
-    # Texto da IA
+    # Veredito IA
     st.markdown(f"""
-    <div style="background-color: #222; padding: 25px; border-radius: 10px; border-left: 5px solid {cor};">
-        <h3 style="color: #FFC107; margin-top: 0;">📝 VEREDITO:</h3>
-        <p style="font-size: 16px; line-height: 1.6;">{dados.get('texto_ia', 'Erro ao carregar')}</p>
+    <div style="background-color:#222; padding:20px; border-radius:10px; border-left:5px solid {cor}">
+        <b style="color:#FFC107">VEREDITO:</b><br>{d['texto_ia']}
     </div>
     """, unsafe_allow_html=True)
-
-    # Botão WhatsApp
+    
     st.markdown("<br>", unsafe_allow_html=True)
-    st.link_button("SOLICITAR INTERVENÇÃO TÁTICA 🚀", f"https://wa.me/55999999999?text=Sou+um+{dados['quadrante']}+e+preciso+de+ajuda")
-
-    if st.button("REFAZER TESTE ↺"):
+    st.link_button("SOLICITAR INTERVENÇÃO 🚀", f"https://wa.me/55999999999?text=Sou+{d['quadrante']}")
+    
+    if st.button("REFAZER"):
         st.session_state.step = 1
         st.rerun()
-
-# Rodapé
-st.markdown("<br><hr><center style='color:#666; font-size:12px;'>© 2026 MÉTODO ULTRA ®</center>", unsafe_allow_html=True)
