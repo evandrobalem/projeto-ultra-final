@@ -4,275 +4,198 @@ import google.generativeai as genai
 import time
 import requests
 
-# --- 1. CONFIGURAÇÃO VISUAL DE ELITE ---
+# --- 1. CONFIGURAÇÃO DE ELITE ---
 st.set_page_config(page_title="Mapeamento Ultra", page_icon="💎", layout="centered", initial_sidebar_state="collapsed")
 
-# CSS PERSONALIZADO (A MÁGICA DO DESIGN)
+# --- 2. CSS "FERRARI" (VISUAL DE LUXO) ---
 st.markdown("""
     <style>
-    /* Fundo Escuro Profundo */
+    /* Fundo Preto Profundo */
     .stApp {
-        background-color: #0E1117;
+        background-color: #050505;
         color: #E0E0E0;
     }
     
-    /* Esconder menus do Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* Remover marcas do Streamlit */
+    #MainMenu, footer, header {visibility: hidden;}
     
-    /* Títulos Dourados */
-    h1, h2, h3 {
-        color: #FFC107 !important;
-        font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 800;
+    /* Cards das Perguntas (Caixas Estilizadas) */
+    .pergunta-card {
+        background-color: #111;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #333;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .pergunta-titulo {
+        color: #FFC107;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .pergunta-texto {
+        color: #BBB;
+        font-size: 15px;
+        line-height: 1.5;
+        margin-bottom: 15px;
     }
     
-    /* Botões de Ação (Estilo Militar) */
+    /* Botões Dourados Premium */
     .stButton > button {
-        background-color: #FFC107 !important;
-        color: #000000 !important;
-        font-weight: 900 !important;
-        border: none !important;
-        padding: 16px !important;
-        font-size: 18px !important;
+        background: linear-gradient(45deg, #FFC107, #FFD54F);
+        color: #000;
+        font-weight: 900;
+        border: none;
+        padding: 18px;
+        font-size: 18px;
         text-transform: uppercase;
-        letter-spacing: 1px;
         width: 100%;
-        border-radius: 5px;
-        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
-        transition: all 0.3s ease;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+        transition: transform 0.2s;
     }
     .stButton > button:hover {
-        background-color: #FFD54F !important;
         transform: scale(1.02);
-        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+        box-shadow: 0 8px 20px rgba(255, 193, 7, 0.5);
     }
 
-    /* Sliders Personalizados */
+    /* Inputs de Texto (Formulário) */
+    .stTextInput > div > div > input {
+        background-color: #1A1A1A !important;
+        color: #FFF !important;
+        border: 1px solid #444 !important;
+        border-radius: 8px;
+        padding: 12px;
+    }
+    
+    /* Sliders Dourados */
     div.stSlider > div[data-baseweb="slider"] > div > div > div[role="slider"] {
         background-color: #FFC107 !important;
         box-shadow: 0 0 10px #FFC107;
     }
     div.stSlider > div[data-baseweb="slider"] > div > div > div > div {
-        background-color: #444 !important;
-    }
-    
-    /* Caixas de Texto (Perguntas) */
-    .pergunta-box {
-        background-color: #161B22;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 4px solid #FFC107;
-        margin-bottom: 20px;
-    }
-    .pergunta-titulo {
-        font-size: 18px;
-        font-weight: bold;
-        color: #FFC107;
-        margin-bottom: 8px;
-    }
-    .pergunta-texto {
-        font-size: 14px;
-        color: #CCCCCC;
-        line-height: 1.5;
-    }
-    
-    /* Input Fields */
-    .stTextInput > div > div > input {
-        background-color: #0E1117 !important;
-        color: white !important;
-        border: 1px solid #FFC107 !important;
+        background-color: #333 !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONFIGURAÇÃO TÉCNICA ---
+# --- 3. CONEXÃO E SISTEMA ANTIFRÁGIL ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     SHEET_URL = st.secrets["SHEET_URL"]
     genai.configure(api_key=GOOGLE_API_KEY)
 except:
-    pass # Falha silenciosa se não tiver chave, mostra erro visual depois
+    pass
 
-# --- 3. LÓGICA DO MENTOR (IA) ---
-def get_mentor_voice(palco, bastidor, quadrante, pior_area):
+def get_mentor_voice_antifragil(palco, bastidor, quadrante, pior_area):
     if not GOOGLE_API_KEY:
-        return "⚠️ ERRO TÉCNICO: A Chave de API não foi detectada. Verifique os 'Secrets' no Streamlit."
+        return "⚠️ Erro: Chave de API não configurada."
     
-    # Prompt Blindado
     prompt = f"""
-    Aja como o Mentor do 'Método Ultra'. Sua persona é direta, visceral e estratégica.
-    Analise este líder:
-    - Perfil: {quadrante}
-    - Potência Externa (Palco): {palco:.1f}/10
-    - Sustentação Interna (Bastidor): {bastidor:.1f}/10
-    - Ponto Fraco Crítico: {pior_area}
-
-    Escreva um veredito de IMPACTO (máximo 50 palavras).
-    Não dê "parabéns". Vá direto na dor ou na estratégia.
-    Use formatação Markdown (**negrito**) para destacar o importante.
+    Aja como o Mentor do 'Método Ultra'. Seja curto, visceral e estratégico.
+    Perfil: {quadrante} (Palco: {palco:.1f}, Bastidor: {bastidor:.1f}).
+    Ponto Fraco: {pior_area}.
+    Escreva um veredito de 2 frases impactantes. Vá na dor.
     """
+    
+    # TENTATIVA 1: Modelo Flash (Mais Rápido)
     try:
-        # Tenta o modelo mais novo (Flash)
         model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        # Fallback de segurança
-        return f"O Mentor está recalculando a rota. (Erro: {e})"
+        return model.generate_content(prompt).text
+    except:
+        # TENTATIVA 2: Modelo Pro (Fallback de Segurança)
+        try:
+            model = genai.GenerativeModel('gemini-pro')
+            return model.generate_content(prompt).text
+        except Exception as e:
+            return f"O Mentor está em silêncio tático. (Erro: {e})"
 
 def save_lead(dados):
     if not SHEET_URL: return
     try:
         requests.post(SHEET_URL, json={
             "Data": time.strftime("%d/%m/%Y"),
-            "Nome": dados['nome'],
-            "Email": dados['email'],
-            "WhatsApp": dados['whatsapp'],
-            "Resultado": dados['quadrante'],
-            "Palco": f"{dados['palco']:.1f}",
-            "Bastidor": f"{dados['bastidor']:.1f}"
+            "Nome": dados['nome'], "Email": dados['email'], "Whatsapp": dados['whatsapp'],
+            "Resultado": dados['quadrante'], "Palco": f"{dados['palco']:.1f}", "Bastidor": f"{dados['bastidor']:.1f}"
         })
     except: pass
 
-# --- 4. FLUXO DO APLICATIVO (WIZARD) ---
+# --- 4. O APLICATIVO ---
 if 'step' not in st.session_state: st.session_state.step = 1
 if 'd' not in st.session_state: st.session_state.d = {}
 
-def feedback_visual(nota):
-    if nota <= 4: return "🔴 Crítico"
-    elif nota <= 7: return "🟡 Atenção"
-    else: return "🟢 Potência"
-
-# TELA 1: CAPA
-if st.session_state.step == 1:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; font-size: 50px;'>MÉTODO ULTRA</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 18px; color: #aaa;'>MAPEAMENTO DE COERÊNCIA</p>", unsafe_allow_html=True)
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; padding: 20px;">
-        <p>Você venceu o jogo de fora. Mas e o jogo de dentro?</p>
-        <p>Este não é um teste de vaidade. É um diagnóstico de <b>sustentação</b>.</p>
+def render_pergunta(titulo, texto, key):
+    st.markdown(f"""
+    <div class="pergunta-card">
+        <div class="pergunta-titulo">{titulo}</div>
+        <div class="pergunta-texto">{texto}</div>
     </div>
     """, unsafe_allow_html=True)
+    val = st.slider("", 0, 10, 5, key=key)
+    return val
+
+# TELA 1: CAPA IMPACTANTE
+if st.session_state.step == 1:
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-size: 55px; margin-bottom: 0;'>MÉTODO ULTRA</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 16px; color: #888; letter-spacing: 2px;'>ENGENHARIA DE LUCIDEZ BRUTAL</p>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    if st.button("INICIAR DIAGNÓSTICO 🚀"):
+    st.markdown("""
+    <div style="background: #111; padding: 25px; border-left: 4px solid #FFC107; border-radius: 8px;">
+        <p style="margin:0; font-size: 18px; color: #DDD;">
+        <b>O paradoxo do líder moderno:</b><br><br>
+        Vencer o jogo de fora (Dinheiro, Status) e perder o jogo de dentro (Paz, Propósito).<br>
+        Este diagnóstico vai revelar a sua <b>Sustentação Real</b>.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("INICIAR PROTOCOLO 🚀"):
         st.session_state.step = 2
         st.rerun()
 
-# TELA 2: PERGUNTAS (LAYOUT RICO)
+# TELA 2: O TESTE (VISUAL CARD)
 elif st.session_state.step == 2:
-    st.markdown("### 🏛️ O PALCO (O que o mundo vê)")
+    st.progress(50, text="ANALISANDO PERFIL...")
+    st.markdown("<h3 style='color:#FFC107; text-align:center'>O IMPÉRIO (PALCO)</h3>", unsafe_allow_html=True)
     
-    # Pergunta 1
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">1. Resultados e Entrega</div>
-        <div class="pergunta-texto">Sendo brutalmente honesto: comparado à média do mercado, o quanto você realmente entrega de resultado? Você é insubstituível?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q1 = st.slider("", 0, 10, 5, key="q1")
-    st.caption(feedback_visual(q1))
-    
-    # Pergunta 2
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">2. O Peso da Coroa</div>
-        <div class="pergunta-texto">Qual o tamanho da pressão e responsabilidade que está sobre os seus ombros hoje? Quanto custa errar na sua posição?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q2 = st.slider("", 0, 10, 5, key="q2")
+    q1 = render_pergunta("1. Entrega Real", "Comparado à média do mercado, o quanto você realmente entrega? Você é insubstituível?", "q1")
+    q2 = render_pergunta("2. O Peso da Coroa", "Qual o tamanho da pressão e responsabilidade sobre seus ombros hoje?", "q2")
+    q3 = render_pergunta("3. Autoridade", "Quando falam seu nome, qual o nível de respeito imediato?", "q3")
+    q4 = render_pergunta("4. Ambição", "Sua fome de conquista está viva ou você se acomodou?", "q4")
 
-    # Pergunta 3
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">3. Reconhecimento</div>
-        <div class="pergunta-texto">Quando citam o seu nome na sua área, qual o nível de respeito e autoridade que você tem? Você é uma referência?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q3 = st.slider("", 0, 10, 5, key="q3")
-    
-    # Pergunta 4
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">4. Fome de Conquista</div>
-        <div class="pergunta-texto">O quanto você ainda quer crescer? Sua ambição está viva ou você se acomodou no conforto?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q4 = st.slider("", 0, 10, 5, key="q4")
+    st.markdown("<br><h3 style='color:#FFC107; text-align:center'>O HOMEM (BASTIDOR)</h3>", unsafe_allow_html=True)
 
-    st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.markdown("### 🧱 O BASTIDOR (O que só você sente)")
-
-    # Pergunta 5
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">5. Bateria Real</div>
-        <div class="pergunta-texto">Ao acordar na segunda-feira, qual seu nível real de energia vital? Você acorda pronto ou já cansado?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q5 = st.slider("", 0, 10, 5, key="q5")
-    st.caption(feedback_visual(q5))
-
-    # Pergunta 6
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">6. Controle da Mente</div>
-        <div class="pergunta-texto">Quem está no comando: você ou sua ansiedade? Sua mente é uma aliada ou uma tortura constante?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q6 = st.slider("", 0, 10, 5, key="q6")
-
-    # Pergunta 7
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">7. Presença Real</div>
-        <div class="pergunta-texto">Quando você está com quem ama (filhos, esposa), você está lá de corpo e alma ou está no celular/trabalho?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q7 = st.slider("", 0, 10, 5, key="q7")
-
-    # Pergunta 8
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">8. Sentido</div>
-        <div class="pergunta-texto">No fundo, você sente que o que faz tem um propósito maior ou é apenas uma corrida pelo dinheiro?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q8 = st.slider("", 0, 10, 5, key="q8")
-
-    # Pergunta 9
-    st.markdown("""
-    <div class="pergunta-box">
-        <div class="pergunta-titulo">9. O Silêncio</div>
-        <div class="pergunta-texto">Se você ficar 1 hora sozinho, em silêncio absoluto, sem celular. O que acontece? Paz ou Angústia?</div>
-    </div>
-    """, unsafe_allow_html=True)
-    q9 = st.slider("", 0, 10, 5, key="q9")
+    q5 = render_pergunta("5. Energia Vital", "Ao acordar, você tem bateria cheia ou já começa no modo economia?", "q5")
+    q6 = render_pergunta("6. Domínio Mental", "Quem manda: você ou sua ansiedade/pensamentos?", "q6")
+    q7 = render_pergunta("7. Presença", "Com sua família, você está lá de corpo e alma ou apenas de corpo?", "q7")
+    q8 = render_pergunta("8. Propósito", "Você sente que sua vida tem um sentido maior ou é só boleto?", "q8")
+    q9 = render_pergunta("9. O Silêncio", "1 hora sozinho sem celular: Paz absoluta ou tortura mental?", "q9")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("ANALISAR MEU PERFIL ➡️"):
+    if st.button("PROCESSAR DADOS ➡️"):
         st.session_state.d = {'q1':q1, 'q2':q2, 'q3':q3, 'q4':q4, 'q5':q5, 'q6':q6, 'q7':q7, 'q8':q8, 'q9':q9}
         st.session_state.step = 3
         st.rerun()
 
-# TELA 3: CADASTRO
+# TELA 3: CADASTRO PREMIUM
 elif st.session_state.step == 3:
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center;'>🔒 RELATÓRIO CONFIDENCIAL</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color:#aaa;'>Para gerar seu veredito personalizado, identifique-se.</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #FFF;'>🔒 ACESSO RESTRITO</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #888;'>Identifique-se para acessar o Veredito do Mentor.</p>", unsafe_allow_html=True)
     
-    nome = st.text_input("Seu Nome Completo")
-    email = st.text_input("Seu Melhor E-mail")
-    zap = st.text_input("WhatsApp (com DDD)")
-    
+    with st.container():
+        nome = st.text_input("Nome Completo")
+        email = st.text_input("E-mail Profissional")
+        zap = st.text_input("WhatsApp")
+
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("REVELAR A VERDADE 🔓"):
+    if st.button("LIBERAR VEREDITO 🔓"):
         if nome and email and zap:
-            # Cálculos
+            # Lógica
             d = st.session_state.d
             palco = (d['q1']+d['q2']+d['q3']+d['q4'])/4
             bastidor = (d['q5']+d['q6']+d['q7']+d['q8']+d['q9'])/5
@@ -282,77 +205,67 @@ elif st.session_state.step == 3:
             elif palco < 5 and bastidor >= 5: quad = "TEÓRICO"
             else: quad = "SONÂMBULO"
             
-            # Pior nota
             notas = [d['q5'], d['q6'], d['q7'], d['q8'], d['q9']]
             labels = ["Energia", "Mente", "Presença", "Sentido", "Silêncio"]
             pior_area = labels[notas.index(min(notas))]
 
-            # Salva
             st.session_state.d.update({'nome':nome, 'email':email, 'whatsapp':zap, 'quadrante':quad, 'palco':palco, 'bastidor':bastidor, 'pior_area':pior_area})
             st.session_state.step = 4
             st.rerun()
         else:
-            st.error("⚠️ Preencha todos os campos para liberar o acesso.")
+            st.warning("Preenchimento obrigatório.")
 
 # TELA 4: PROCESSAMENTO
 elif st.session_state.step == 4:
     st.markdown("<br><br><br>", unsafe_allow_html=True)
-    with st.spinner("🔄 Conectando ao Banco de Dados Ultra..."):
+    with st.spinner("Conectando à Inteligência Ultra..."):
         save_lead(st.session_state.d)
-        time.sleep(1)
-    
-    with st.spinner("🧠 O Mentor está escrevendo seu veredito..."):
         dados = st.session_state.d
-        texto = get_mentor_voice(dados['palco'], dados['bastidor'], dados['quadrante'], dados['pior_area'])
-        st.session_state.d['texto_ia'] = texto
-    
-    st.session_state.step = 5
-    st.rerun()
+        dados['texto_ia'] = get_mentor_voice_antifragil(dados['palco'], dados['bastidor'], dados['quadrante'], dados['pior_area'])
+        time.sleep(1)
+        st.session_state.step = 5
+        st.rerun()
 
-# TELA 5: RESULTADO
+# TELA 5: RESULTADO FINAL (FERRARI)
 elif st.session_state.step == 5:
     d = st.session_state.d
-    
-    # Cores Dinâmicas
     cor = "#FF0000" if d['quadrante'] == "GIGANTE DE CRISTAL" else "#00FF00"
     if d['quadrante'] == "SONÂMBULO": cor = "#888"
-    if d['quadrante'] == "TEÓRICO": cor = "#00F"
+    if d['quadrante'] == "TEÓRICO": cor = "#0000FF"
 
-    st.markdown(f"<h1 style='text-align: center; color: {cor}; font-size: 45px;'>{d['quadrante']}</h1>", unsafe_allow_html=True)
+    # Cabeçalho do Resultado
+    st.markdown(f"<div style='text-align:center; padding:10px;'><span style='font-size:16px; color:#888'>SEU ARQUÉTIPO É:</span><br><h1 style='color:{cor}; font-size:42px; margin:0'>{d['quadrante']}</h1></div>", unsafe_allow_html=True)
     
-    # GRÁFICO (TRAVADO PARA MOBILE)
+    # Gráfico
     fig = go.Figure()
-    # Quadrantes
     fig.add_shape(type="rect", x0=0, y0=5, x1=5, y1=10, fillcolor="red", opacity=0.15, line_width=0)
     fig.add_shape(type="rect", x0=5, y0=5, x1=10, y1=10, fillcolor="green", opacity=0.15, line_width=0)
     fig.add_shape(type="rect", x0=0, y0=0, x1=5, y1=5, fillcolor="gray", opacity=0.15, line_width=0)
     fig.add_shape(type="rect", x0=5, y0=0, x1=10, y1=5, fillcolor="blue", opacity=0.15, line_width=0)
     
-    # Ponto
     fig.add_trace(go.Scatter(
         x=[d['bastidor']], y=[d['palco']],
         mode='markers',
         marker=dict(size=35, color=cor, line=dict(width=4, color='white'))
     ))
     
-    # Configuração MOBILE FRIENDLY (Static)
     fig.update_layout(
-        xaxis=dict(range=[0, 10], title="BASTIDOR (Interno)", showgrid=False, fixedrange=True),
-        yaxis=dict(range=[0, 10], title="PALCO (Externo)", showgrid=False, fixedrange=True),
-        width=400, height=400,
+        xaxis=dict(range=[0, 10], title="BASTIDOR", showgrid=False, fixedrange=True, zeroline=False),
+        yaxis=dict(range=[0, 10], title="PALCO", showgrid=False, fixedrange=True, zeroline=False),
+        width=350, height=350,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
-        margin=dict(l=20, r=20, t=10, b=10),
+        margin=dict(l=10, r=10, t=10, b=10),
         dragmode=False
     )
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'staticPlot': True})
+    st.plotly_chart(fig, use_container_width=True, config={'staticPlot': True})
 
-    # Veredito IA (Box Estilizado)
+    # Cartão do Mentor (Veredito)
     st.markdown(f"""
-    <div style="background-color: #161B22; padding: 25px; border-radius: 10px; border-left: 5px solid {cor}; margin-top: 20px;">
-        <h3 style="color: #FFC107; margin: 0 0 10px 0;">📝 VEREDITO DO MENTOR:</h3>
-        <p style="font-size: 16px; color: #EEE; line-height: 1.6;">{d['texto_ia']}</p>
+    <div style="background-color: #111; padding: 25px; border-radius: 12px; border: 1px solid {cor}; margin-top: 10px;">
+        <h3 style="color: #FFC107; margin-top: 0; font-size: 20px;">📝 A VOZ DO MENTOR</h3>
+        <p style="font-size: 16px; color: #EEE; line-height: 1.6; margin-bottom: 0;">{d.get('texto_ia', 'Erro na IA')}</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -363,5 +276,4 @@ elif st.session_state.step == 5:
         st.session_state.step = 1
         st.rerun()
 
-# RODAPÉ
-st.markdown("<br><br><center style='color:#444; font-size:12px;'>© 2026 MÉTODO ULTRA ®</center>", unsafe_allow_html=True)
+st.markdown("<br><br><center style='color:#333; font-size:10px;'>MÉTODO ULTRA ® 2026</center>", unsafe_allow_html=True)
